@@ -1,11 +1,18 @@
+//Creating variables and loading sprite pictures into them
 const canvas = document.getElementById('canvas');
 let ctx = canvas.getContext('2d');
 
 let soundStep = new Audio('./sound/step.mp3');
 
 
-let picBackground = new Image();
-picBackground.src = "./pic/background.jpg";
+let picStart = new Image();
+picStart.src = "./pic/background/start.png";
+let picBackgroundlvl1 = new Image();
+picBackgroundlvl1.src = "./pic/background/lvl1.jpg";
+let picBackgroundlvl2 = new Image();
+picBackgroundlvl2.src = "./pic/background/lvl2.jpg";
+let picBackgroundlvl3 = new Image();
+picBackgroundlvl3.src = "./pic/background/lvl3.jpg";
 
 let picPlayerLeft = new Image();
 picPlayerLeft.src = "./pic/playerLeft.png";
@@ -22,7 +29,7 @@ let picEnemyRight = new Image();
 picEnemyRight.src = "./pic/enemyRight.png";
 
 let picLife = new Image();
-picLife.src = "./pic/picLife.png";
+picLife.src = "./pic/life.png";
 
 let picCoin = new Image();
 picCoin.src = "./pic/picCoin.png";
@@ -30,6 +37,8 @@ picCoin.src = "./pic/picCoin.png";
 let arrPicEnemy = [];
 arrPicEnemy['left'] = picEnemyLeft;
 arrPicEnemy['right'] = picEnemyRight;
+
+let arrPicBackground = [picStart,picBackgroundlvl1,picBackgroundlvl2,picBackgroundlvl3];
 
 ctx.canvas.width = window.innerWidth;
 ctx.canvas.height = window.innerHeight;
@@ -46,15 +55,18 @@ function newPositionCoin() {
 }
 
 function resizeImg(img, percent) {
-    let prop;
-    if (img.width > img.height) {
-        prop = img.width / img.height;
+    
+    if (img.width < img.height) {
+        let prop = img.height / img.width;
         img.height = window.innerHeight * percent / 100;
-        img.width = img.height * prop;
+        img.width = img.height / prop;
     } else {
-        prop = img.height / img.width;
+     let prop = img.width / img.height;
+     console.log(img.width);
+     console.log(img.height);
+     console.log(prop);
         img.width = window.innerHeight * percent / 100;
-        img.height = img.width * prop;
+        img.height = img.width / prop;
     }
 }
 let startGame = false;
@@ -62,6 +74,7 @@ let xPlayer = 50,
     yPlayer = 665,
     speedPlayer = 5,
     speedEnemy = 50,
+    lvl=0,
     navPlayer = 'right',
     navEnemy = 'left',
     xEnemy = 750,
@@ -99,9 +112,11 @@ function draw() {
         ctx.stroke(path);
         ctx.fill(path);
     }
+    let picBackground = arrPicBackground[lvl];
+    //Creating a button, defining coordinates
     if (!startGame) {
+       
         let buttonStart = new Path2D;
-
         function drawButton(strokeColor, fillColor) {
             ctx.clearRect(0, 0, innerWidth, innerHeight)
             ctx.drawImage(picBackground, 0, 0, window.innerWidth, window.innerHeight);
@@ -114,21 +129,32 @@ function draw() {
             let buttonText = "START";
             printText(buttonText, xButton+widthButton/2-innerWidth*0.02, yButton+heightButton/2+innerHeight*0.01, 25, "Black");
         }
-        drawButton("Black", "Silver");
+        //Set the color of the button and determine if the cursor is over the button
+        drawButton("Blue", "Silver");
         canvas.addEventListener("mousemove",(event)=>{
-            if(ctx.isPointInPath(buttonStart,event.clientX,event.clientY)){
-                drawButton("Black", "Grey")
-            }else{
-                drawButton("Black", "Silver");
+            if(lvl==0){
+                if(ctx.isPointInPath(buttonStart,event.clientX,event.clientY)){
+                    drawButton("Blue", "White")
+                }else{
+                    drawButton("Blue", "Silver");
             }
-        })
-    } else {
+        }
+        });
+        document.addEventListener("click",(event)=>{
+            if(lvl==0){
+                if(ctx.isPointInPath(buttonStart,event.clientX,event.clientY)){
+                    startPosition();
+                    newPositionCoin();
+                    moveEnemy();
+                    lvl=1;
+                    startGame = true;
+                }
+            }
+        });
+    } 
         let picPlayer = arrPicPlayer[navPlayer];
         let picEnemy = arrPicEnemy[navEnemy];
-        resizeImg(picPlayer, 8);
-        resizeImg(picEnemy, 5);
-        resizeImg(picLife, 5);
-        resizeImg(picCoin, 3);
+       
         boardPicPlayer = boardPic(picPlayer, xPlayer, yPlayer);
         boardPicEnemy = boardPic(picEnemy, xEnemy, yEnemy);
         boardPicCoin = boardPic(picCoin, positionCoin[0], positionCoin[1]);
@@ -171,25 +197,6 @@ function draw() {
                 moveEnemy();
             }, speedEnemy);
         }
-
-        if (startGame) {
-            startPosition();
-            newPositionCoin();
-            moveEnemy();
-            startGame = false;
-        }
-
-        ctx.drawImage(picBackground, 0, 0, window.innerWidth, window.innerHeight);
-        ctx.drawImage(picPlayer, xPlayer, yPlayer, picPlayer.width, picPlayer.height);
-        ctx.drawImage(picEnemy, xEnemy, yEnemy, picEnemy.width, picEnemy.height);
-        ctx.drawImage(picCoin, positionCoin[0], positionCoin[1], picCoin.width, picCoin.height);
-
-        for (let i = 0; i < countLife; i++) {
-            let yLife = innerHeight * 0.05;
-            let xLife = innerWidth * 0.05 + picLife.width * i;
-            ctx.drawImage(picLife, xLife, yLife, picLife.width, picLife.height);
-        }
-
         function collisionCoin() {
             if (checkCollision(xPlayer, positionCoin[0], yPlayer, positionCoin[1], boardPicPlayer[0], boardPicCoin[0], boardPicPlayer[1], boardPicCoin[1])) {
                 countCoin++;
@@ -197,11 +204,25 @@ function draw() {
             }
         }
         collisionCoin();
+if(startGame){
+    resizeImg(picPlayer, 8);
+    resizeImg(picEnemy, 5);
+    resizeImg(picLife, 5);
+    resizeImg(picCoin, 3);
+        ctx.drawImage(picBackground, 0, 0, window.innerWidth, window.innerHeight);
+        ctx.drawImage(picPlayer, xPlayer, yPlayer, picPlayer.width, picPlayer.height);
+        ctx.drawImage(picEnemy, xEnemy, yEnemy, picEnemy.width, picEnemy.height);
+        ctx.drawImage(picCoin, positionCoin[0], positionCoin[1], picCoin.width, picCoin.height);
+        for (let i = 0; i < countLife; i++) {
+            let yLife = innerHeight * 0.05;
+            let xLife = innerWidth * 0.05 + picLife.width * i;
+            ctx.drawImage(picLife, xLife, yLife, picLife.width, picLife.height);
+        }
         printText("Count = " + countCoin, innerWidth * 0.05, innerHeight * 0.05 + picLife.height, 14, "Green");
     }
 }
 
-picEnemyRight.onload = picEnemyLeft.onload = picPlayerLeft.onload = picPlayerRight.onload = picBackground.onload = draw;
+picCoin.onload = picEnemyRight.onload = picEnemyLeft.onload = picPlayerLeft.onload = picPlayerRight.onload = picStart.onload = picBackgroundlvl1.onload = picBackgroundlvl2.onload = picBackgroundlvl3.onload = draw;
 
 document.addEventListener('keydown', (event) => {
     let KeyPressed = event.code;
